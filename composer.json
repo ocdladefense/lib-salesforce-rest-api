@@ -1,7 +1,7 @@
 {
     "name": "ocdladefense/lib-salesforce-rest-api",
     "description": "OCDLA plugin accesses.",
-    "type": "wordpress-theme",
+    "type": "library",
     "minimum-stability": "dev",
     "prefer-stable": true,
     "require": {
