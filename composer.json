@@ -6,5 +6,8 @@
     "prefer-stable": true,
     "require": {
         "ocdladefense/lib-http": "dev-main"
+    },
+    "autoload": {
+        "classmap":["src/", "models/"]
     }
 }
