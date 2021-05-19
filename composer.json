@@ -5,7 +5,8 @@
     "minimum-stability": "dev",
     "prefer-stable": true,
     "require": {
-        "ocdladefense/lib-http": "dev-main"
+        "ocdladefense/lib-http": "dev-main",
+        "ocdladefense/lib-oauth-config":"~3.0"
     },
     "autoload": {
         "classmap":["src/", "models/"]

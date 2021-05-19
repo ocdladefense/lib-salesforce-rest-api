@@ -12,7 +12,7 @@ class OAuth {
     }
 
 
-    public static function newOAuthResponse($config,$flow) {
+    public static function newOAuthResponse(\OAuthConfig $config, $flow) {
 
         $flowConfig = $config->getFlowConfig($flow);
 
