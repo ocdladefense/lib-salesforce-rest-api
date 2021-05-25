@@ -43,21 +43,19 @@ class OAuthRequest extends HttpRequest {
 
 	public static function usernamePasswordFlowAccessTokenRequest($config, $flow) {
 
-		$flowConfig = $config->getFlowConfig($flow);
-
-		if($flowConfig->getTokenUrl() == null){
+		if($flow->getTokenUrl() == null){
 
 			throw new \Exception("null token url");
 		}
 
-		$req = new OAuthRequest($flowConfig->getTokenUrl());
+		$req = new OAuthRequest($flow->getTokenUrl());
 
 		$body = array(
 			"grant_type" 			=> "password",
 			"client_id" 			=> $config->getClientId(),
 			"client_secret"			=> $config->getClientSecret(),
-			"username"				=> $flowConfig->getUserName(),
-			"password"				=> $flowConfig->getPassword() . $flowConfig->getSecurityToken()
+			"username"				=> $flow->getUserName(),
+			"password"				=> $flow->getPassword() . $flow->getSecurityToken()
 		);
 
 		$body = http_build_query($body);
@@ -75,21 +73,20 @@ class OAuthRequest extends HttpRequest {
 	
 	public static function webServerFlowAccessTokenRequest($config, $flow) {
 
-		$flowConfig = $config->getFlowConfig($flow);
-
+		// Are we sure that "redirect_uri" is actually required.
 		$body = array(
 			"grant_type"		=> "authorization_code",
 			"client_id"			=> $config->getClientId(),
 			"client_secret" 	=> $config->getClientSecret(),
 			"code" 				=> $config->getAuthorizationCode(),
-			"redirect_uri"		=> $flowConfig->getCallbackUrl()
+			"redirect_uri"		=> $flow->getDestinationUrl()
 		);
 
 		//var_dump($body);exit;
 
 		$body = http_build_query($body);
 
-		$req = new OAuthRequest($flowConfig->getTokenUrl());
+		$req = new OAuthRequest($flow->getTokenUrl());
 		
 		$req->setMethod("POST");
 		$req->setBody($body);
@@ -100,8 +97,6 @@ class OAuthRequest extends HttpRequest {
 
 	public static function refreshAccessTokenRequest($config, $flow) {
 
-		$flowConfig = $config->getFlowConfig($flow);
-
 		$body = array(
 			"grant_type"		=> "refresh_token",
 			"client_id"			=> $config->getClientId(),
@@ -111,7 +106,7 @@ class OAuthRequest extends HttpRequest {
 
 		$body = http_build_query($body);
 
-		$req = new OAuthRequest($flowConfig->getTokenUrl());
+		$req = new OAuthRequest($flow->getTokenUrl());
 		
 		$req->setMethod("POST");
 		$req->setBody($body);

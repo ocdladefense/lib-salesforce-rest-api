@@ -6,27 +6,26 @@ use Http\HttpHeader;
 
 class OAuth {
 
-    public static function start($config, $flow){
+    public static function start($config, $flowName, $domain = "default"){
 
-        return $flow == "webserver" ? self::newOAuthResponse($config,$flow) : OAuthRequest::newAccessTokenRequest($config,$flow);
+        $flow = $config->getFlowConfig($flowName, $domain);
+        return $flowName == "webserver" ? self::newOAuthResponse($config, $flow) : OAuthRequest::newAccessTokenRequest($config, $flow);
     }
 
 
-    public static function newOAuthResponse(\OAuthConfig $config, $flow) {
-
-        $flowConfig = $config->getFlowConfig($flow);
+    public static function newOAuthResponse(\OAuthConfig $config, \OAuthFlowConfig $flow) {
 
         $resp = new OAuthResponse();
 
-        $url = $flowConfig->getAuthorizationUrl();  // Since this is a web server oauth, there will be two oauth urls in the config.
+        $url = $flow->getAuthorizationUrl();  // Since this is a web server oauth, there will be two oauth urls in the config.
 
-        $state = array("connected_app_name" => $config->getName(), "flow" => $flow);
+        //$state = array("connected_app_name" => $config->getName(), "flow" => $flow->getName(), "domain" => $flow->getDomain());
 
         $body = array(
             "client_id"		=> $config->getClientId(),
-            "redirect_uri"	=> $flowConfig->getAuthorizationRedirect(),
+            "redirect_uri"	=> $flow->getCallbackUrl(),
             "response_type" => "code",
-            "state"         => json_encode($state)
+            "state"         => self::encodeState($config->getName(), $flow->getName(), $flow->getDomain())
         );
 
         $url .= "?" . http_build_query($body);
@@ -34,6 +33,15 @@ class OAuth {
         $resp->addHeader(new HttpHeader("Location", $url));
 
         return $resp;
+    }
+
+    public static function encodeState($connectedAppName, $flow, $domain){
+
+        $state = array("connected_app_name" => $connectedAppName, "flow" => $flow, "domain" => $domain);
+
+        return json_encode($state);
+
+        
     }
 
     public static function setSession($connectedApp, $flow, $instanceUrl, $accessToken, $refreshToken = null){
