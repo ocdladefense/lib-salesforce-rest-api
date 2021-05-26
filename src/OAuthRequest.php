@@ -26,7 +26,9 @@ class OAuthRequest extends HttpRequest {
 	// Figure out which flow to return.
 	public static function newAccessTokenRequest($config, $flow){
 
-		switch($flow){
+		$type = $flow->getName();
+		
+		switch($type){
 			case "usernamepassword":
 				return self::usernamePasswordFlowAccessTokenRequest($config, $flow);
 				break;
@@ -35,8 +37,9 @@ class OAuthRequest extends HttpRequest {
 				break;
 			case "refreshtoken":
 				return self::refreshAccessTokenRequest($config, $flow);
+				break;
 			default:
-				throw new \Exception("ACCESS_TOKEN_REQUEST_ERROR: No built in functionality for {$flow} OAuth flow");
+				throw new \Exception("ACCESS_TOKEN_REQUEST_ERROR: No built in functionality for {$flow->getName()} OAuth flow");
 		}
 	}
 	
