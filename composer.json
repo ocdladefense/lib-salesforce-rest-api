@@ -5,7 +5,7 @@
     "minimum-stability": "dev",
     "prefer-stable": true,
     "require": {
-        "ocdladefense/lib-http": "dev-main",
+        "ocdladefense/lib-http": "~2.0",
         "ocdladefense/lib-oauth-config":"~4.0"
     },
     "autoload": {
