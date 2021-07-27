@@ -26,9 +26,7 @@ class OAuthRequest extends HttpRequest {
 	// Figure out which flow to return.
 	public static function newAccessTokenRequest($config, $flow){
 
-		$type = $flow->getName();
-		
-		switch($type){
+		switch($flow){
 			case "usernamepassword":
 				return self::usernamePasswordFlowAccessTokenRequest($config, $flow);
 				break;
@@ -37,28 +35,29 @@ class OAuthRequest extends HttpRequest {
 				break;
 			case "refreshtoken":
 				return self::refreshAccessTokenRequest($config, $flow);
-				break;
 			default:
-				throw new \Exception("ACCESS_TOKEN_REQUEST_ERROR: No built in functionality for {$flow->getName()} OAuth flow");
+				throw new \Exception("ACCESS_TOKEN_REQUEST_ERROR: No built in functionality for {$flow} OAuth flow");
 		}
 	}
 	
 
 	public static function usernamePasswordFlowAccessTokenRequest($config, $flow) {
 
-		if($flow->getTokenUrl() == null){
+		$flowConfig = $config->getFlowConfig($flow);
+
+		if($flowConfig->getTokenUrl() == null){
 
 			throw new \Exception("null token url");
 		}
 
-		$req = new OAuthRequest($flow->getTokenUrl());
+		$req = new OAuthRequest($flowConfig->getTokenUrl());
 
 		$body = array(
 			"grant_type" 			=> "password",
 			"client_id" 			=> $config->getClientId(),
 			"client_secret"			=> $config->getClientSecret(),
-			"username"				=> $flow->getUserName(),
-			"password"				=> $flow->getPassword() . $flow->getSecurityToken()
+			"username"				=> $flowConfig->getUserName(),
+			"password"				=> $flowConfig->getPassword() . $flowConfig->getSecurityToken()
 		);
 
 		$body = http_build_query($body);
@@ -76,20 +75,21 @@ class OAuthRequest extends HttpRequest {
 	
 	public static function webServerFlowAccessTokenRequest($config, $flow) {
 
-		// Are we sure that "redirect_uri" is actually required.
+		$flowConfig = $config->getFlowConfig($flow);
+
 		$body = array(
 			"grant_type"		=> "authorization_code",
 			"client_id"			=> $config->getClientId(),
 			"client_secret" 	=> $config->getClientSecret(),
 			"code" 				=> $config->getAuthorizationCode(),
-			"redirect_uri"		=> $flow->getDestinationUrl()
+			"redirect_uri"		=> $flowConfig->getCallbackUrl()
 		);
 
 		//var_dump($body);exit;
 
 		$body = http_build_query($body);
 
-		$req = new OAuthRequest($flow->getTokenUrl());
+		$req = new OAuthRequest($flowConfig->getTokenUrl());
 		
 		$req->setMethod("POST");
 		$req->setBody($body);
@@ -100,6 +100,13 @@ class OAuthRequest extends HttpRequest {
 
 	public static function refreshAccessTokenRequest($config, $flow) {
 
+		if(\Session::get($config->getName(), $flow, "refresh_token") == null){
+
+			throw new \Exception("OAUTH_REQUEST_ERROR: You don't have a 'refresh_token' in you session.  You may have to delete your session and reauthorize using the 'web server' oauth flow.");
+		}
+
+		$flowConfig = $config->getFlowConfig($flow);
+
 		$body = array(
 			"grant_type"		=> "refresh_token",
 			"client_id"			=> $config->getClientId(),
@@ -109,11 +116,15 @@ class OAuthRequest extends HttpRequest {
 
 		$body = http_build_query($body);
 
-		$req = new OAuthRequest($flow->getTokenUrl());
+		$req = new OAuthRequest($flowConfig->getTokenUrl());
 		
 		$req->setMethod("POST");
 		$req->setBody($body);
-		$req->addHeader(new HttpHeader("Content-Type","application/x-www-form-urlencoded")); 
+		$req->addHeader(new HttpHeader("Content-Type","application/x-www-form-urlencoded"));
+
+		// $resp = $req->authorize();
+
+		// var_dump($resp->getBody());exit;
 
 		return $req;
 	}
