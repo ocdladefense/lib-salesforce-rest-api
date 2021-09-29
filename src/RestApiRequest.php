@@ -269,6 +269,79 @@ class RestApiRequest extends HttpRequest {
         return $resp;
     }
 
+    
+    public function getOccupationFieldsDistinct(){
+
+        $query = "SELECT Ocdla_Occupation_Field_Type__c FROM Contact ORDER BY Ocdla_Occupation_Field_Type__c DESC";
+
+        $result = $this->query($query);
+
+        if(!$result->isSuccess()) throw new Exception($result->getErrorMessage());
+
+        $records = $result->getRecords();
+
+        $areas = array();
+
+        foreach($records as $record){
+
+            $area = $record["Ocdla_Occupation_Field_Type__c"];
+
+            $areas[$area] = $area;
+        }
+
+        return $areas;
+    }
+
+    public function getAreasOfInterest($pickListId){
+
+        $url = "/services/data/v39.0/tooling/sobjects/GlobalValueSet/$pickListId";
+
+        $resp = $this->send($url);
+
+        $picklistValues = $resp->getBody()["Metadata"]["customValue"];
+
+        $areasOfInterest = array();
+        foreach($picklistValues as $value){
+
+            $valueName = $value["valueName"];
+
+            $areasOfInterest[$valueName] = $valueName;
+        }
+
+        return $areasOfInterest;
+    }
+
+    public function getSobjectField($sObjectName, $fieldName){
+
+        $endpoint = "/services/data/v23.0/sobjects/$sObjectName/describe";
+        $resp = $this->send($endpoint);
+        $fields = $resp->getBody()["fields"];
+
+        foreach($fields as $field){
+
+            if($field["name"] == $fieldName){
+
+                return $field;
+            }
+        }
+
+        return null;
+    }
+
+    public static function getPicklistValues($field){
+
+        $pValues = array();
+
+        $pickListValues = $field["picklistValues"];
+
+        foreach($pickListValues as $value){
+
+            $pValues[$value["value"]] = $value["label"];
+        }
+
+        return $pValues;
+    }
+
     public function upsert($sobjectName, $record){
 
         // Set up the endpoint.
