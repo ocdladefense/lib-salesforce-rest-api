@@ -8,7 +8,10 @@ class ApiHelper{
 
         $conditions = array();
 
-        $fieldsWithValues = array_filter($values);
+        $fieldsWithValues = array_filter($values, function($value){
+
+            return ($value !== "" && $value !== null);
+        });
 
         if(empty($fieldsWithValues)) return null;
 
@@ -26,11 +29,11 @@ class ApiHelper{
     }
 
 
-    public static function getPicklistValues($field){
+    public static function getPicklistFieldValues($pickListField){
 
         $pValues = array();
 
-        $pickListValues = $field["picklistValues"];
+        $pickListValues = $pickListField["picklistValues"];
 
         foreach($pickListValues as $value){
 

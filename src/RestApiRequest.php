@@ -269,48 +269,8 @@ class RestApiRequest extends HttpRequest {
         return $resp;
     }
 
-    
-    public function getOccupationFieldsDistinct(){
 
-        $query = "SELECT Ocdla_Occupation_Field_Type__c FROM Contact ORDER BY Ocdla_Occupation_Field_Type__c DESC";
-
-        $result = $this->query($query);
-
-        if(!$result->isSuccess()) throw new Exception($result->getErrorMessage());
-
-        $records = $result->getRecords();
-
-        $areas = array();
-
-        foreach($records as $record){
-
-            $area = $record["Ocdla_Occupation_Field_Type__c"];
-
-            $areas[$area] = $area;
-        }
-
-        return $areas;
-    }
-
-    public function getAreasOfInterest($pickListId){
-
-        $url = "/services/data/v39.0/tooling/sobjects/GlobalValueSet/$pickListId";
-
-        $resp = $this->send($url);
-
-        $picklistValues = $resp->getBody()["Metadata"]["customValue"];
-
-        $areasOfInterest = array();
-        foreach($picklistValues as $value){
-
-            $valueName = $value["valueName"];
-
-            $areasOfInterest[$valueName] = $valueName;
-        }
-
-        return $areasOfInterest;
-    }
-
+    // Uses the "sobject describe" endpoint to retrive the given fields metatdata.
     public function getSobjectField($sObjectName, $fieldName){
 
         $endpoint = "/services/data/v23.0/sobjects/$sObjectName/describe";
@@ -328,19 +288,63 @@ class RestApiRequest extends HttpRequest {
         return null;
     }
 
-    public static function getPicklistValues($field){
 
-        $pValues = array();
+    // Uses the salesforce "GlobalValueSet: endpoint, to return the GlobalValueSet with the given Id.
+    public function getGlobalValueSetNames($valueSetId){
 
-        $pickListValues = $field["picklistValues"];
+        $url = "/services/data/v39.0/tooling/sobjects/GlobalValueSet/$valueSetId";
 
-        foreach($pickListValues as $value){
+        $resp = $this->send($url);
 
-            $pValues[$value["value"]] = $value["label"];
+        $customValues = $resp->getBody()["Metadata"]["customValue"];
+
+        $valueNames = array();
+        foreach($customValues as $value){
+
+            $valueName = $value["valueName"];
+
+            $valueNames[$valueName] = $valueName;
         }
 
-        return $pValues;
+        return $valueNames;
     }
+
+
+    public function getGlobalValueSetIdByDeveloperName($developername){
+
+        $endpoint = "/services/data/v41.0/tooling/query?q=select+id+from+globalvalueset+Where+developername='$developername'";
+
+        $resp = $this->send($endpoint);
+
+        $gvsId = $resp->getRecord()["Id"];
+
+        return $gvsId;
+    }
+    
+
+    // Get a "DISTINCT", ordered list of field values.
+    public function getSoqlDistinctFieldValues($sobjectName, $fieldName, $descending = False){
+
+        $query = "SELECT $fieldName FROM $sobjectName ORDER BY $fieldName";
+
+        if($descending) $query .= " DESC";
+
+        $result = $this->query($query);
+
+        if(!$result->isSuccess()) throw new Exception($result->getErrorMessage());
+
+        $fieldValues = $result->getRecords();
+
+        $filtered = array();
+
+        foreach($fieldValues as $value){
+
+            $filtered[$value[$fieldName]] = $value[$fieldName];
+        }
+
+        return $filtered;
+    }
+
 
     public function upsert($sobjectName, $record){
 
