@@ -60,18 +60,4 @@ class SObject {
 
         return $pValues;
     }
-
-    // Get a "DISTINCT", ordered list of field values.
-    public function getDistinctFieldValues($fieldName, $descending = False){
-
-        $query = "SELECT $fieldName FROM $this->name GROUP BY $fieldName";
-
-        if($descending) $query .= " DESC";
-
-        $result = $this->api->query($query);
-
-        if(!$result->isSuccess()) throw new Exception($result->getErrorMessage());
-
-        return $result->getRecords();
-    }
 }
