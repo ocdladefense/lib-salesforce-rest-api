@@ -2,7 +2,7 @@
 
 namespace Salesforce;
 
-class ApiHelper{
+class SoqlQueryBuilder{
 
     public static function getSoqlConditions($values, $fields){
 
