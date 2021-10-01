@@ -4,7 +4,7 @@ namespace Salesforce;
 
 class ApiHelper{
 
-    public static function getSoqlConditions($values, $syntaxInstructions){
+    public static function getSoqlConditions($values, $fields){
 
         $conditions = array();
 
@@ -18,9 +18,12 @@ class ApiHelper{
 
         foreach($fieldsWithValues as $field => $value){
 
+            $syntax = $fields[$field];
+            
+            if($syntax == null) continue;
+
             $value = is_bool($value) ? ($value ? "True" : "False") : $value;
 
-            $syntax = $syntaxInstructions[$field];
             $formatted = sprintf($syntax, $value);
             $conditions[] = $field . " " . $formatted;
         }

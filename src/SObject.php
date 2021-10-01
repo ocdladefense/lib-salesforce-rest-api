@@ -4,46 +4,61 @@ namespace Salesforce;
 
 
 
-abstract class SObject {
+class SObject {
 
-    protected $Id;
+    private $name;
 
-    protected $Name;
+    private $meta;
 
-    protected $SObjectName;
+    private $api;
 
-    public function getSObjectName(){
-        return $this->SObjectName;
+    
+
+    public function __construct($name){
+
+        $this->name = $name;
     }
 
 
-    public function getSObject() {
+    public static function fromSobjectName($sobjectName, $api){
 
-        return get_object_vars($this);
-    }
+        $endpoint = "/services/data/v23.0/sobjects/$sObjectName/describe";
 
-    public function getId(){
+        $resp = $api->send($endpoint);
 
-        return $this->Id;
-    }
+        $sobject = new self($sobjectName);
+        $sobject->meta = $resp->getBody();
 
-    public function getName(){
-
-        return $this->Name;
-    }
-
-    public function setId($id){
-
-        $this->Id = $id;
-    }
-
-    public function setName($name){
-
-        $this->Name = $name;
+        return $sobject;
     }
 
 
+    public function getField($fieldName){
 
+        $fields = $this->meta["fields"];
 
+        foreach($fields as $field){
 
+            if($field["name"] == $fieldName){
+
+                return $field;
+            }
+        }
+
+        return null;
+    }
+
+    // Get a "DISTINCT", ordered list of field values.
+    public function getDistinctFieldValues($fieldName, $descending = False){
+
+        $query = "SELECT $fieldName FROM $this->name GROUP BY $fieldName";
+
+        if($descending) $query .= " DESC";
+
+        $result = $this->api->query($query);
+
+        if(!$result->isSuccess()) throw new Exception($result->getErrorMessage());
+
+        return $result->getRecords();
+    }
 }

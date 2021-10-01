@@ -269,24 +269,33 @@ class RestApiRequest extends HttpRequest {
         return $resp;
     }
 
+    public function queryAll($soql) {
 
-    // Uses the "sobject describe" endpoint to retrive the given fields metatdata.
-    public function getSobjectField($sObjectName, $fieldName){
 
-        $endpoint = "/services/data/v23.0/sobjects/$sObjectName/describe";
-        $resp = $this->send($endpoint);
-        $fields = $resp->getBody()["fields"];
+        $this->setMethod("GET");
 
-        foreach($fields as $field){
+        $endpoint = "/services/data/v49.0/query/?q=";
+        $endpoint .= urlencode($soql);
 
-            if($field["name"] == $fieldName){
+        $records = array();
 
-                return $field;
-            }
-        }
+        do {
 
-        return null;
+            $resp = $this->send($endpoint);
+
+            $body = $resp->getBody();
+
+            $records = array_merge($records, $resp->getRecords());
+
+            $endpoint = $body["nextRecordsUrl"];
+        
+        } while($body["done"] === false);
+
+        $resp->setRecords($records);
+
+        return $resp;
     }
+
 
 
     // Uses the salesforce "GlobalValueSet: endpoint, to return the GlobalValueSet with the given Id.
@@ -321,29 +330,6 @@ class RestApiRequest extends HttpRequest {
         return $gvsId;
     }
     
-
-    // Get a "DISTINCT", ordered list of field values.
-    public function getSoqlDistinctFieldValues($sobjectName, $fieldName, $descending = False){
-
-        $query = "SELECT $fieldName FROM $sobjectName ORDER BY $fieldName";
-
-        if($descending) $query .= " DESC";
-
-        $result = $this->query($query);
-
-        if(!$result->isSuccess()) throw new Exception($result->getErrorMessage());
-
-        $fieldValues = $result->getRecords();
-
-        $filtered = array();
-
-        foreach($fieldValues as $value){
-
-            $filtered[$value[$fieldName]] = $value[$fieldName];
-        }
-
-        return $filtered;
-    }
 
 
     public function upsert($sobjectName, $record){
