@@ -337,6 +337,20 @@ class RestApiRequest extends HttpRequest {
         $resp = $this->send($sObjectMetaEndpoint);
         return $resp->getBody();
     }
+
+    // Get a "DISTINCT", ordered list of field values.
+    public function getDistinctFieldValues($sobjectName, $fieldName, $descending = False){
+
+        $query = "SELECT $fieldName FROM $sobjectName GROUP BY $fieldName";
+
+        if($descending) $query .= " DESC";
+
+        $result = $this->query($query);
+
+        if(!$result->isSuccess()) throw new Exception($result->getErrorMessage());
+
+        return $result->getRecords();
+    }
     
 
 
