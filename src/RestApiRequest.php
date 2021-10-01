@@ -269,6 +269,77 @@ class RestApiRequest extends HttpRequest {
         return $resp;
     }
 
+    public function queryAll($soql) {
+
+
+        $this->setMethod("GET");
+
+        $endpoint = "/services/data/v49.0/query/?q=";
+        $endpoint .= urlencode($soql);
+
+        $records = array();
+
+        do {
+
+            $resp = $this->send($endpoint);
+
+            $body = $resp->getBody();
+
+            $records = array_merge($records, $resp->getRecords());
+
+            $endpoint = $body["nextRecordsUrl"];
+        
+        } while($body["done"] === false);
+
+        $resp->setRecords($records);
+
+        return $resp;
+    }
+
+
+
+    // Uses the salesforce "GlobalValueSet: endpoint, to return the GlobalValueSet with the given Id.
+    public function getGlobalValueSetNames($valueSetId){
+
+        $url = "/services/data/v39.0/tooling/sobjects/GlobalValueSet/$valueSetId";
+
+        $resp = $this->send($url);
+
+        $customValues = $resp->getBody()["Metadata"]["customValue"];
+
+        $valueNames = array();
+        foreach($customValues as $value){
+
+            $valueName = $value["valueName"];
+
+            $valueNames[$valueName] = $valueName;
+        }
+
+        return $valueNames;
+    }
+
+
+    public function getGlobalValueSetIdByDeveloperName($developername){
+
+        $endpoint = "/services/data/v41.0/tooling/query?q=select+id+from+globalvalueset+Where+developername='$developername'";
+
+        $resp = $this->send($endpoint);
+
+        $gvsId = $resp->getRecord()["Id"];
+
+        return $gvsId;
+    }
+
+    // Get the metadata for the contact object.
+    public function getSobjectMetadata($sobjectName){
+
+        $sObjectMetaEndpoint = "/services/data/v23.0/sobjects/$sobjectName/describe";
+        $resp = $this->send($sObjectMetaEndpoint);
+        return $resp->getBody();
+    }
+    
+
+
     public function upsert($sobjectName, $record){
 
         // Set up the endpoint.

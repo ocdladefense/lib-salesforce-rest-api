@@ -95,6 +95,11 @@ class RestApiResponse extends HttpResponse {
         return count($this->getRecords());
     }
 
+    public function setRecords($records){
+
+        $this->body["records"] = $records;
+    }
+
 
     public function other(){
 
