@@ -20,14 +20,10 @@ class SObject {
     }
 
 
-    public static function fromSobjectName($sObjectName, $api){
-
-        $endpoint = "/services/data/v23.0/sobjects/$sObjectName/describe";
-
-        $resp = $api->send($endpoint);
+    public static function fromSobjectName($sObjectName, $metadata){
 
         $sobject = new self($sobjectName);
-        $sobject->meta = $resp->getBody();
+        $sobject->meta = $metadata;
 
         return $sobject;
     }

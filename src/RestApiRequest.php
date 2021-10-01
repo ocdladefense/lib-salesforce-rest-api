@@ -329,6 +329,14 @@ class RestApiRequest extends HttpRequest {
 
         return $gvsId;
     }
+
+    // Get the metadata for the contact object.
+    public function getSobjectMetadata($sobjectName){
+
+        $sObjectMetaEndpoint = "/services/data/v23.0/sobjects/$sobjectName/describe";
+        $resp = $this->send($sObjectMetaEndpoint);
+        return $resp->getBody();
+    }
     
 
 
