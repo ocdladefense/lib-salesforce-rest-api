@@ -20,7 +20,7 @@ class SObject {
     }
 
 
-    public static function fromSobjectName($sobjectName, $api){
+    public static function fromSobjectName($sObjectName, $api){
 
         $endpoint = "/services/data/v23.0/sobjects/$sObjectName/describe";
 
@@ -46,6 +46,23 @@ class SObject {
         }
 
         return null;
+    }
+
+
+    public function getPicklist($fieldName){
+
+        $fieldMeta = $this->getField($fieldName);
+
+        $pValues = array();
+
+        $pickListValues = $fieldMeta["picklistValues"];
+
+        foreach($pickListValues as $value){
+
+            $pValues[$value["value"]] = $value["label"];
+        }
+
+        return $pValues;
     }
 
     // Get a "DISTINCT", ordered list of field values.
