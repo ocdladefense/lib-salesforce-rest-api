@@ -20,9 +20,9 @@ class SObject {
     }
 
 
-    public static function fromSobjectName($sObjectName, $metadata){
+    public static function fromMetadata($metadata){
 
-        $sobject = new self($sobjectName);
+        $sobject = new self($metadata["name"]);
         $sobject->meta = $metadata;
 
         return $sobject;
