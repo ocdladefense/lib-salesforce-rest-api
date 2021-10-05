@@ -23,12 +23,12 @@ class SoqlQueryBuilder{
 
     public function buildConditions($conditionGroup){
 
-        // Filter out the conditions where no value is present at the key of "value".  With the exception of grouped conditions.  Reset the keys.
-        $conditions = array_values(array_filter($conditionGroup["conditions"], function($con){
+        // Filter out the conditions where no value is present at the key of "value".  With the exception of grouped conditions.
+        $conditions = array_filter($conditionGroup["conditions"], function($con){
 
             return $con["isGroup"] == True || ($con["value"] !== null && $con["value"] !== "");
             
-        }));
+        });
 
 
         $sql = "";
