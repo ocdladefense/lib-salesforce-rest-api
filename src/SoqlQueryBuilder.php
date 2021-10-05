@@ -50,7 +50,7 @@ class SoqlQueryBuilder{
                 // Filter out the conditions with no values, and reset the keys.
                 $subConditions = array_values(array_filter($condition["conditions"], function($con){
 
-                    return $con["isGroup"] == True || ($con["value"] !== null && $con["value"] !== "");
+                    return ($con["value"] !== null && $con["value"] !== "");
                     
                 }));
 
