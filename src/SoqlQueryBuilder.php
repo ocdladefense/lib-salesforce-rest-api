@@ -62,7 +62,7 @@ class SoqlQueryBuilder{
 
                     if(!is_array($subcondition)) continue;
 
-                    if(!empty($subcondition["value"])) $sql .= $this->buildCondition($subcondition, $joinOperator);
+                    $sql .= $this->buildCondition($subcondition, $joinOperator);
                 }
 
                 $sql = trim($sql, " $joinOperator");
