@@ -26,8 +26,8 @@ class SoqlQueryBuilder{
         // Filter out the conditions where no value is present at the key of "value".  With the exception of grouped conditions.
         $conditions = array_filter($conditionGroup["conditions"], function($con){
 
-            return $con["isGroup"] == True || ($con["value"] !== null && $con["value"] !== "");
-            
+            return $con["isGroup"] == True || ($con["value"] !== null && $con["value"] !== ""); 
+
         });
 
 
@@ -38,16 +38,16 @@ class SoqlQueryBuilder{
 
             if(!is_array($condition)) continue;
 
-            if($condition["isGroup"] != True){ // It is not a group of conditions.
+            if($condition["isGroup"] != True){      //The condition is not a group of conditions.
 
                 $sql .= $this->buildCondition($condition, $joinOperator);
 
-            } else { // It is a group of conditions.
+            } else {        //The condition is actually a group of conditions.  Set the join operator to that of the condition subgroup and iterate over the sub conditions.
 
                 // Since "isGroup" is set to True, this condition is a group of conditions, so the join operator changes to the op on the parent condition.
                 $joinOperator = $condition["op"];
 
-                // Filter out the conditions with no values, and reset the keys.
+                // Filter out the conditions with no values, and reset the keys...for the loop.
                 $subConditions = array_values(array_filter($condition["conditions"], function($con){
 
                     return ($con["value"] !== null && $con["value"] !== "");
@@ -58,11 +58,9 @@ class SoqlQueryBuilder{
 
                     if($i == 0) $sql .= "(";
 
-                    $subcondition = $subConditions[$i];
+                    if(!is_array($subconditions[$i])) continue;
 
-                    if(!is_array($subcondition)) continue;
-
-                    $sql .= $this->buildCondition($subcondition, $joinOperator);
+                    $sql .= $this->buildCondition($subconditions[$i], $joinOperator);
                 }
 
                 $sql = trim($sql, " $joinOperator");
@@ -97,7 +95,7 @@ class SoqlQueryBuilder{
     }
 
 
-    // Just takes the entire condition string right now.
+    // Just takes the entire condition string right now...including the join operator.
     public function addCondition($entireConditionString) {
 
         $this->conditions .= $entireConditionString;
