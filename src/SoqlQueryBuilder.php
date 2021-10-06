@@ -38,13 +38,12 @@ class SoqlQueryBuilder{
 
             if(!is_array($condition)) continue;
 
-            if($condition["isGroup"] != True){      //The condition is not a group of conditions.
+            if($condition["isGroup"] != True){      //The condition is not a group of conditions.  It is a single condition.
 
                 $sql .= $this->buildCondition($condition, $joinOperator);
 
             } else {        //The condition is actually a group of conditions.  Set the join operator to that of the condition subgroup and iterate over the sub conditions.
-
-                // Since "isGroup" is set to True, this condition is a group of conditions, so the join operator changes to the op on the parent condition.
+                
                 $joinOperator = $condition["op"];
 
                 // Filter out the conditions with no values, and reset the keys...for the loop.
