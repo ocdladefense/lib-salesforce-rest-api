@@ -130,13 +130,13 @@ class SoqlQueryBuilder{
 
     public function compile() {
 
+        $extra = !empty($this->conditions["extra"]) ? implode(" ", $this->conditions["extra"]) : null;
+
         $sql = "SELECT " . implode(", ", $this->fields) . " FROM $this->object";
         
-        if(!empty($this->conditions)) $sql .= " WHERE {$this->buildConditions()}" . implode(" ", $this->conditions["extra"]);
+        if(!empty($this->conditions)) $sql .= " WHERE {$this->buildConditions()}" . $extra;
         
         if(!empty($this->orderBy)) $sql .= " ORDER BY $this->orderBy";
-
-        //var_dump($sql);exit;
 
         return $sql;
     }
