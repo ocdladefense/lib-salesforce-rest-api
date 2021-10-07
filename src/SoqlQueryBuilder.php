@@ -6,11 +6,7 @@ class SoqlQueryBuilder{
 
     public $baseQuery;
 
-    public $selectFields;
-
     public $conditions;
-
-    public $addedConditions;
 
     public $orderBy;
 
@@ -71,10 +67,14 @@ class SoqlQueryBuilder{
     }
 
 
-    // Just takes the entire condition string right now...including the join operator.
-    public function addCondition($conditionString) {
+    public function addCondition($fieldname, $operator, $value, $syntax) {
 
-        $this->addedConditions .= $conditionString;
+        $this->conditions["conditions"][] = array(
+            "fieldname" => $fieldname,
+            "op"        => $operator,
+            "value"     => $value,
+            "syntax"     => $syntax
+        );
     }
 
     public function mergeValues($fields, $values = null, $removeEmpty = True) {
@@ -117,7 +117,7 @@ class SoqlQueryBuilder{
 
         $sql = $this->baseQuery;
         
-        if(!empty($this->conditions)) $sql .= " WHERE {$this->_buildConditions()} $this->addedConditions";
+        if(!empty($this->conditions)) $sql .= " WHERE {$this->_buildConditions()}";
         
         if(!empty($this->orderBy)) $sql .= " ORDER BY $this->orderBy";
 
