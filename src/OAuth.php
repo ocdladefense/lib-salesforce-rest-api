@@ -11,8 +11,42 @@ class OAuth {
 
         $_SESSION["login_redirect"] = $_SERVER["HTTP_REFERER"];
 
-        return $flow == "webserver" ? self::newOAuthResponse($config,$flow) : OAuthRequest::newAccessTokenRequest($config,$flow);
+        return $flow == "webserver" ? self::newOAuthResponse($config,$flow) : self::newOAuthRequest($config,$flow);
     }
+
+
+
+	public static function newOAuthRequest($config, $flow) {
+
+		$flowConfig = $config->getFlowConfig($flow);
+
+		if($flowConfig->getTokenUrl() == null){
+
+			throw new \Exception("null token url");
+		}
+
+		$req = new OAuthRequest($flowConfig->getTokenUrl());
+
+		$body = array(
+			"grant_type" 			=> "password",
+			"client_id" 			=> $config->getClientId(),
+			"client_secret"			=> $config->getClientSecret(),
+			"username"				=> $flowConfig->getUserName(),
+			"password"				=> $flowConfig->getPassword() . $flowConfig->getSecurityToken()
+		);
+
+		$body = http_build_query($body);
+		$contentType = new HttpHeader("Content-Type", "application/x-www-form-urlencoded");
+		$req->addHeader($contentType);
+		
+		$req->setBody($body);
+		$req->setMethod("POST");
+		// Sending a HttpResponse class as a Header to represent the HttpResponse.
+		$req->addHeader(new HttpHeader("X-HttpClient-ResponseClass","\Salesforce\OAuthResponse"));
+
+		return $req;
+	}
+
 
     // This is step one.  We are going to make a request to the "auth_url".
     // We do this by redirecting the user agent to the auth_url.
