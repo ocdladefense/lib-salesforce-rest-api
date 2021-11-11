@@ -14,7 +14,7 @@ use File\File;
 
 class RestApiRequest extends HttpRequest {
 
-    public const SALESFORCE_EXPIRED_ACCESS_TOKEN_ERROR = "INVALID_SESSION_ID";
+    //public static const SALESFORCE_EXPIRED_ACCESS_TOKEN_ERROR = "INVALID_SESSION_ID";
 
     public $resourcePrefix = "/services/data";
 
@@ -26,22 +26,22 @@ class RestApiRequest extends HttpRequest {
 
 
 
-	public const ENDPOINTS = array(
-        "sObject Basic Information" => array(
-            "endpoint" => "/%apiVersion/sobjects/%sObject/",
-            "parameters" => array(
-                "version" => 0,
-                "sObjectName" => 2
-            )
-        ),
-        "Query" => array(
-            "endpoint" => "/%apiVersion/query/?q=",
-            "parameters" => array(
-                "version" => 0,
-                "soql" => "q"
-            )
-        )
-    );
+	// public const ENDPOINTS = array(
+    //     "sObject Basic Information" => array(
+    //         "endpoint" => "/%apiVersion/sobjects/%sObject/",
+    //         "parameters" => array(
+    //             "version" => 0,
+    //             "sObjectName" => 2
+    //         )
+    //     ),
+    //     "Query" => array(
+    //         "endpoint" => "/%apiVersion/query/?q=",
+    //         "parameters" => array(
+    //             "version" => 0,
+    //             "soql" => "q"
+    //         )
+    //     )
+    // );
 
 
     public function __construct($instanceUrl, $accessToken) {
@@ -115,10 +115,10 @@ class RestApiRequest extends HttpRequest {
         return $this->instanceUrl;
     }
 
-    public function getEndpoint($target, $version = "v51.0" , $getIndex = false){
+    // public function getEndpoint($target, $version = "v51.0" , $getIndex = false){
 
-        return ENDPOINT[$target][$version];
-    }
+    //     return ENDPOINT[$target][$version];
+    // }
 
     public function uploadFile(SalesforceFile $file){
 
