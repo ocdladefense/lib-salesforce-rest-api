@@ -89,6 +89,12 @@ class RestApiResponse extends HttpResponse {
         return $index == null ? $this->body["records"][0] : $this->body["records"][$index];
     }
 
+    public function getFirst() {
+        $index = 0;
+
+        return $this->body["records"][$index];
+    }
+
 
     public function getRecordCount(){
 
