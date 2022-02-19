@@ -354,19 +354,23 @@ class RestApiRequest extends HttpRequest {
     
 
 
+
     public function upsert($sobjectName, $record){
+        $record = is_array($record) ? (object)$record : $record;
 
         // Set up the endpoint.
         $baseUrl = "/services/data/v49.0/sobjects/" . $sobjectName;
         $endpoint = $record->Id == null || $record->Id == "" ? $baseUrl : $baseUrl . "/" . $record->Id;
 
-        $record = self::formatJson($record);
+        //$record = self::formatJson($record);
 
         // Set up the request.
         $record->Id == null || $record->Id == "" ? $this->setPost() : $this->setPatch();
         $this->setContentType("application/json");
+        //unsetting record id because 277 because id gets passed in as part of endpoint
         unset($record->Id);
         $this->setBody(json_encode($record));
+
 
         $resp = $this->send($endpoint);
 
@@ -401,6 +405,7 @@ class RestApiRequest extends HttpRequest {
 
         return $record;
     }
+    
 
     public function getAttachment($id) {
         
