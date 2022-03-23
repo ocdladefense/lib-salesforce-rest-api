@@ -80,17 +80,6 @@ class RestApiRequest extends HttpRequest {
         
         $resp = $http->send($this, true);
 
-        // Is it safe to assume that if a RestApiRequest fails due to an expired access token, that we are using the usernamepassword flow?
-        // if($resp->getErrorCode() == self::SALESFORCE_EXPIRED_ACCESS_TOKEN_ERROR){
-
-        //     throw new \Exception($resp->getErrorMessage() . " Until this bug is fixed, you will need to clear your cookies to resolve this issue.");
-
-        //     //$updatedRequest = refresh_user_pass_access_token($this);
-
-        //     //var_dump($this, $updatedRequest);exit;
-
-        //     //return $http->send($updatedRequest, true);
-        // }
 
         return $resp;
     }
@@ -239,6 +228,8 @@ class RestApiRequest extends HttpRequest {
         return $req;
     }
     
+
+
     public function sendBatch($records, $sObjectName) {
 
         $batches = array();
@@ -257,7 +248,15 @@ class RestApiRequest extends HttpRequest {
         return $resp->getBody();
     }
 
-    public function query($soql) {
+
+
+
+
+    public function query($soql, $page = false) {
+
+        if(false === $page) {
+            return $this->loadAll($soql);
+        }
 
         $endpoint = "/services/data/v49.0/query/?q=";
         $endpoint .= urlencode($soql);
@@ -269,7 +268,38 @@ class RestApiRequest extends HttpRequest {
         return $resp;
     }
 
-    public function queryAll($soql) {
+
+
+
+    public function queryAll($soql, $page = true) {
+
+        $endpoint = "/services/data/v54.0/queryAll/?q=";
+        $endpoint .= urlencode($soql);
+
+        $this->setMethod("GET");
+
+        $records = array();
+
+        do {
+            // var_dump($this);exit;
+            $resp = $this->send($endpoint);
+            
+            $body = $resp->getBody();
+
+            $records = array_merge($records, $resp->getRecords());
+
+            $endpoint = $body["nextRecordsUrl"];
+        
+        } while(false === $page && $body["done"] === false);
+
+        $resp->setRecords($records);
+
+        return $resp;
+    }
+
+
+
+    public function loadAll($soql) {
 
 
         $this->setMethod("GET");
