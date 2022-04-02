@@ -253,7 +253,7 @@ class RestApiRequest extends HttpRequest {
 
 
     public function query($soql, $page = false) {
-
+        
         if(false === $page) {
             return $this->loadAll($soql);
         }
@@ -285,8 +285,8 @@ class RestApiRequest extends HttpRequest {
             $resp = $this->send($endpoint);
             
             $body = $resp->getBody();
-
-            $records = array_merge($records, $resp->getRecords());
+            $current = null == $resp->getRecords() ? array() : $resp->getRecords();
+            $records = array_merge($records, $current);
 
             $endpoint = $body["nextRecordsUrl"];
         
