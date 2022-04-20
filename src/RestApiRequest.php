@@ -315,7 +315,8 @@ class RestApiRequest extends HttpRequest {
 
             $body = $resp->getBody();
 
-            $records = array_merge($records, $resp->getRecords());
+            $current = null == $resp->getRecords() ? array() : $resp->getRecords();
+            $records = array_merge($records, $current);
 
             $endpoint = $body["nextRecordsUrl"];
         
