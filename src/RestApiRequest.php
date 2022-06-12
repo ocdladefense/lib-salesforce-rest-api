@@ -63,7 +63,7 @@ class RestApiRequest extends HttpRequest {
         if($this->addXHttpClientHeader){
 
             $this->addHeader(new HttpHeader("X-HttpClient-ResponseClass","\Salesforce\RestApiResponse")); // Use a custom HttpResponse class to represent the HttpResponse.
-        }
+        }  
 
         $token = new HttpHeader("Authorization", "Bearer " . $this->accessToken);
         $this->addHeader($token);
@@ -79,6 +79,11 @@ class RestApiRequest extends HttpRequest {
         $http = new Http($config);
         
         $resp = $http->send($this, true);
+
+        if(\Http\Status\STATUS_401_UNAUTHORIZED == $resp->getStatusCode()) {
+            throw new \Http\HttpClientException(\Http\Status\STATUS_401_UNAUTHORIZED);
+        }
+        
 
 
         return $resp;
