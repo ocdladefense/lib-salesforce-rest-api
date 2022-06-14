@@ -9,6 +9,6 @@
         "ocdladefense/lib-oauth-config":"~2.0"
     },
     "autoload": {
-        "classmap":["src/", "models/"]
+        "classmap":["src/"]
     }
 }
