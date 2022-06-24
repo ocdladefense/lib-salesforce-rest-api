@@ -80,9 +80,18 @@ class RestApiResponse extends HttpResponse {
 
     public function getRecords(){
 
-        return $this->body["records"];
+        return $this->body["records"];  
     }
     
+
+    public function getField($fieldName) {
+
+        $records = $this->getRecords();
+		
+		return array_map(function($record) use($fieldName){
+            return $record[$fieldName];
+        }, $records);
+    }
 
     public function getRecord($index = null){
 
