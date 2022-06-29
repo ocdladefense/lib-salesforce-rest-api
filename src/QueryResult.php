@@ -25,6 +25,13 @@ class QueryResult  {
 
         return $this->rows;
     }
+
+
+    public function key($key) {
+        $keys = $this->getField($key);
+
+        return array_combine($keys,$this->rows);
+    }
     
 
     public function getField($fieldName) {
