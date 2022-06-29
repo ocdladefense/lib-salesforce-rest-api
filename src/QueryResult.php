@@ -12,7 +12,7 @@ class QueryResult  {
 
 
 
-    $rows = array();
+    private $rows = array();
 
 
     public function __construct($rows = array()) {
@@ -69,10 +69,6 @@ class QueryResult  {
         return count($this->getRecords());
     }
 
-    public function setRecords($records){
-
-        $this->body["records"] = $records;
-    }
 
 
 
