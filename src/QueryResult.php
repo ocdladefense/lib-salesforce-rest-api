@@ -27,6 +27,12 @@ class QueryResult  {
     }
 
 
+    public function count() {
+
+        return null == $this->rows ? 0 : count($this->rows);
+    }
+
+
     public function key($key) {
         $keys = $this->getField($key);
 
