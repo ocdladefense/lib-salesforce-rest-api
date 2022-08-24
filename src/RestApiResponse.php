@@ -78,10 +78,20 @@ class RestApiResponse extends HttpResponse {
         }
     }
 
-    public function getRecords(){
+
+
+    public function getRecords() {
 
         return $this->body["records"];  
     }
+
+
+    public function getQueryResult() {
+        return new QueryResult($this->body["records"]);  
+    }
+
+
+
     
 
     public function getField($fieldName) {
@@ -91,6 +101,22 @@ class RestApiResponse extends HttpResponse {
 		return array_map(function($record) use($fieldName){
             return $record[$fieldName];
         }, $records);
+    }
+
+    public function group($fn) {
+
+        $tmp = [];
+
+        foreach($this->getRecords() as $record) {
+            $key = $fn($record);
+            if(!isset($tmp[$key])) {
+                $tmp[$key] = array();
+            }
+
+            $tmp[$key] []= $record;
+        }
+
+        return $tmp;
     }
 
     public function getRecord($index = null){
