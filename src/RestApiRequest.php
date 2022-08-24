@@ -24,6 +24,8 @@ class RestApiRequest extends HttpRequest {
 
     private $addXHttpClientHeader = true;
 
+    private $flow;
+
 
 
 	// public const ENDPOINTS = array(
@@ -80,13 +82,18 @@ class RestApiRequest extends HttpRequest {
         
         $resp = $http->send($this, true);
 
-        if(\Http\Status\STATUS_401_UNAUTHORIZED == $resp->getStatusCode()) {
+        if(\Http\Status\STATUS_401_UNAUTHORIZED == $resp->getStatusCode() && $this->flow == "usernamepassword") {
             throw new \Http\HttpClientException(\Http\Status\STATUS_401_UNAUTHORIZED);
         }
         
 
 
         return $resp;
+    }
+
+    public function setFlow($flow) {
+
+        $this->flow = $flow;
     }
 
     public function removeXHttpClientHeader(){
