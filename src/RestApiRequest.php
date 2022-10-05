@@ -264,13 +264,9 @@ class RestApiRequest extends HttpRequest {
 
 
 
-    public function query($soql, $page = false) {
+    public function queryIncludeDeleted($soql) {
         
-        if(false === $page) {
-            return $this->loadAll($soql);
-        }
-
-        $endpoint = "/services/data/v49.0/query/?q=";
+        $endpoint = "/services/data/v56.0/queryAll/?q=";
         $endpoint .= urlencode($soql);
 
         $this->setMethod("GET");
@@ -279,6 +275,37 @@ class RestApiRequest extends HttpRequest {
 
         return $resp;
     }
+
+
+    public function queryUrl($endpoint) {
+
+        $this->setMethod("GET");
+
+        $resp = $this->send($endpoint);
+        
+        return $resp;
+    }
+
+
+    public function query($soql, $page = false) {
+        
+        if(false === $page) {
+            return $this->loadAll($soql);
+        }
+
+        $endpoint = "/services/data/v54.0/query/?q=";
+        $endpoint .= urlencode($soql);
+
+        $this->setMethod("GET");
+
+        $resp = $this->send($endpoint);
+
+        return $resp;
+    }
+
+
+
+
 
 
 
@@ -308,6 +335,9 @@ class RestApiRequest extends HttpRequest {
 
         return $resp;
     }
+
+
+
 
 
 
