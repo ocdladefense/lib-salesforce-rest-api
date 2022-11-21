@@ -121,6 +121,14 @@ class RestApiRequest extends HttpRequest {
     //     return ENDPOINT[$target][$version];
     // }
 
+    public function setPageSize($size = null) {
+        if(null != $size) {
+            $this->pageSize = $size;
+            $options = new HttpHeader("Sforce-Query-Options", "batchSize={$size}");
+            $this->addHeader($options);
+        }
+    }
+
     public function uploadFile(SalesforceFile $file){
 
         $sObjectName = $file->getSObjectName();
@@ -306,6 +314,51 @@ class RestApiRequest extends HttpRequest {
 
 
 
+    public function loadAll($soql) {
+
+
+        $this->setMethod("GET");
+
+        $endpoint = "/services/data/v49.0/query/?q=";
+        $endpoint .= urlencode($soql);
+
+        $records = array();
+        $runcount = 0;
+
+        do {
+
+            $resp = $this->send($endpoint);
+
+            $body = $resp->getBody();
+            $current = $resp->getRecords() ?? array();
+            $runcount += count($current);
+
+            // If we are paging, determine if 
+            // Correct the size of the final records array
+            // to account for the intended page size.
+            if( null == $this->pageSize) {
+                $records = array_merge($records, $current);
+            } else if($runcount >= $this->pageSize || $body["totalSize"] < $this->pageSize) {
+                $body["done"] = true;
+                $length = $runcount > $this->pageSize ? ($runcount - $this->pageSize) : null;
+                $records = array_merge($records, $current);
+                $records = array_slice($records,0,-$length);
+            } else {
+                $records = array_merge($records, $current); 
+            }
+
+
+
+            $endpoint = $body["nextRecordsUrl"];
+        
+        } while($body["done"] === false);
+
+        $resp->setRecords($records);
+
+        return $resp;
+    }
+
+
 
 
 
@@ -318,14 +371,25 @@ class RestApiRequest extends HttpRequest {
         $this->setMethod("GET");
 
         $records = array();
-
+        $runcount = 0;
         do {
             // var_dump($this);exit;
             $resp = $this->send($endpoint);
-            
             $body = $resp->getBody();
+            
             $current = null == $resp->getRecords() ? array() : $resp->getRecords();
-            $records = array_merge($records, $current);
+            $runcount += count($resp->getRecords());
+
+            // If we are paging, determine if 
+            // Correct the size of the final records array
+            // to account for the intended batch size
+            if( null == $this->pageSize) {
+                $records = array_merge($records, $current);
+            } else if($runcount >= $this->pageSize) {
+                $body["done"] = true;
+                $diff = $runcount > $this->pageSize ? $runcount - $this->pageSize : null;
+                $records = array_merge($records, array_slice($current, 0, $diff));
+            }
 
             $endpoint = $body["nextRecordsUrl"];
         
@@ -341,33 +405,8 @@ class RestApiRequest extends HttpRequest {
 
 
 
-    public function loadAll($soql) {
 
-
-        $this->setMethod("GET");
-
-        $endpoint = "/services/data/v49.0/query/?q=";
-        $endpoint .= urlencode($soql);
-
-        $records = array();
-
-        do {
-
-            $resp = $this->send($endpoint);
-
-            $body = $resp->getBody();
-
-            $current = null == $resp->getRecords() ? array() : $resp->getRecords();
-            $records = array_merge($records, $current);
-
-            $endpoint = $body["nextRecordsUrl"];
-        
-        } while($body["done"] === false);
-
-        $resp->setRecords($records);
-
-        return $resp;
-    }
+    
 
 
 
