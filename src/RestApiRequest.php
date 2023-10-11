@@ -39,7 +39,6 @@ class RestApiRequest extends HttpRequest {
 
 
 
-
     public function __construct($instanceUrl, $accessToken) {
     
     	parent::__construct();
@@ -384,6 +383,9 @@ class RestApiRequest extends HttpRequest {
         $endpoint .= urlencode($soql);
 
         $this->setMethod("GET");
+
+        // $endpoint = "/services/data/v58.0/query/?q=";
+        // $endpoint .= urlencode($soql);
 
         $records = array();
         $runcount = 0;
