@@ -7,43 +7,36 @@ use Http\HttpHeader;
 use Http\Http;
 use Http\HttpResponse;
 use Http\HttpException;
-use phpDocumentor\Reflection\DocBlock\Tags\Throws;
 use Http\BodyPart;
 use File\File;
 
 
+
+
 class RestApiRequest extends HttpRequest {
 
-    //public static const SALESFORCE_EXPIRED_ACCESS_TOKEN_ERROR = "INVALID_SESSION_ID";
+    // Resource to be used.
+    const RESOURCE_PREFIX = "/services/data";
 
-    public $resourcePrefix = "/services/data";
+    // Current API version for all requests to use.
+    // Must be included in the URL.
+    const API_VERSION = "v51.0";
 
+    // All Salesforce requests must include
+    // the instanceUrl and accessTokens.
 	private $instanceUrl;
 	
+    // All Salesforce requests must include
+    // the instanceUrl and accessTokens.
 	private $accessToken;
 
+
     private $addXHttpClientHeader = true;
+
 
     private $flow;
 
 
-
-	// public const ENDPOINTS = array(
-    //     "sObject Basic Information" => array(
-    //         "endpoint" => "/%apiVersion/sobjects/%sObject/",
-    //         "parameters" => array(
-    //             "version" => 0,
-    //             "sObjectName" => 2
-    //         )
-    //     ),
-    //     "Query" => array(
-    //         "endpoint" => "/%apiVersion/query/?q=",
-    //         "parameters" => array(
-    //             "version" => 0,
-    //             "soql" => "q"
-    //         )
-    //     )
-    // );
 
 
     public function __construct($instanceUrl, $accessToken) {
@@ -55,12 +48,24 @@ class RestApiRequest extends HttpRequest {
     }
 
 
+
+
+
+
     public function send($endpoint) {
+
 
         if(empty($this->instanceUrl)) throw new HttpException("REST_API_ERROR:  The instance url cannot be null.");
         if(empty($this->accessToken)) throw new RestApiException("REST_API_ERROR:  The access token cannot be null.");
     
-        $this->setUrl($this->instanceUrl . $endpoint);
+
+        $uri = $this->instanceUrl . self::RESOURCE_PREFIX . "/" . self::API_VERSION . "/{$endpoint}";
+        if(strpos($endpoint, "/") === 0) {
+            $uri = ($this->instanceUrl . $endpoint);
+        }
+
+        // var_dump($uri);
+        $this->setUrl($uri);
         
         if($this->addXHttpClientHeader){
 
@@ -86,40 +91,55 @@ class RestApiRequest extends HttpRequest {
             throw new \Http\HttpClientException(\Http\Status\STATUS_401_UNAUTHORIZED);
         }
         
-
-
         return $resp;
     }
+
+
 
     public function setFlow($flow) {
 
         $this->flow = $flow;
     }
 
+
+
     public function removeXHttpClientHeader(){
 
         $this->addXHttpClientHeader = false;
     }
+
+
 
     public function setAccessToken($token){
 
         $this->accessToken = $token;
     }
 
+
     public function getAccessToken(){
 
         return $this->accessToken;
     }
+
 
     public function getInstanceUrl(){
 
         return $this->instanceUrl;
     }
 
-    // public function getEndpoint($target, $version = "v51.0" , $getIndex = false){
 
-    //     return ENDPOINT[$target][$version];
-    // }
+    /**
+     * @method setPageSize
+     * 
+     * @description 
+     */
+    public function setPageSize($size = null) {
+        if(null != $size) {
+            $this->pageSize = $size;
+            $options = new HttpHeader("Sforce-Query-Options", "batchSize={$size}");
+            $this->addHeader($options);
+        }
+    }
 
     public function uploadFile(SalesforceFile $file){
 
@@ -127,7 +147,7 @@ class RestApiRequest extends HttpRequest {
 
         $isAttachment = $sObjectName == "Attachment";
 
-        $endpoint = "/services/data/v51.0/sobjects/{$file->getSObjectName()}/";
+        $endpoint = "/objects/{$file->getSObjectName()}/";
     
         $method = "POST"; // By default we will insert new records.
 
@@ -175,7 +195,7 @@ class RestApiRequest extends HttpRequest {
 
     public function uploadFiles(\File\FileList $list, $parentId){
 
-        $endpoint = "/services/data/v51.0/composite/sobjects/";
+        $endpoint = "composite/sobjects/";
 
         $this->setMethod("POST");
         $this->addHeader(new HttpHeader("Content-Type", "multipart/form-data; boundary=\"boundary\""));
@@ -227,13 +247,15 @@ class RestApiRequest extends HttpRequest {
         return $metadata;
     }
 		
+
+    
     public function addToBatch($sObjectName, $record, $method = null){
         $req = array();//final request to add to batch
 
         if($method == "POST"){
 
             $req["method"] = $method;
-            $req["url"] = "v49.0/sobjects/".$sObjectName;
+            $req["url"] = (self::API_VERSION . "/sobjects/{$sObjectName}");
             $req["richInput"] = $record;
         }
         
@@ -250,7 +272,7 @@ class RestApiRequest extends HttpRequest {
             $batches[] = $this->addToBatch($sObjectName, $record, "POST");
         }
 
-        $endpoint = "/services/data/v50.0/composite/batch";
+        $endpoint = "composite/batch";
 
         $foobar = array("batchRequests" => $batches);
         $this->body = $foobar;
@@ -266,7 +288,7 @@ class RestApiRequest extends HttpRequest {
 
     public function queryIncludeDeleted($soql) {
         
-        $endpoint = "/services/data/v56.0/queryAll/?q=";
+        $endpoint = "queryAll/?q=";
         $endpoint .= urlencode($soql);
 
         $this->setMethod("GET");
@@ -293,7 +315,7 @@ class RestApiRequest extends HttpRequest {
             return $this->loadAll($soql);
         }
 
-        $endpoint = "/services/data/v54.0/query/?q=";
+        $endpoint = "query/?q=";
         $endpoint .= urlencode($soql);
 
         $this->setMethod("GET");
@@ -306,26 +328,85 @@ class RestApiRequest extends HttpRequest {
 
 
 
+    public function loadAll($soql) {
+
+
+        $this->setMethod("GET");
+
+        $endpoint = "query/?q=";
+        $endpoint .= urlencode($soql);
+
+        $records = array();
+        $runcount = 0;
+
+        do {
+
+            $resp = $this->send($endpoint);
+
+            $body = $resp->getBody();
+            $current = $resp->getRecords() ?? array();
+            $runcount += count($current);
+
+            // If we are paging, determine if 
+            // Correct the size of the final records array
+            // to account for the intended page size.
+            if( null == $this->pageSize) {
+                $records = array_merge($records, $current);
+            } else if($runcount >= $this->pageSize || $body["totalSize"] < $this->pageSize) {
+                $body["done"] = true;
+                $length = $runcount > $this->pageSize ? ($runcount - $this->pageSize) : null;
+                $records = array_merge($records, $current);
+                $records = array_slice($records,0,-$length);
+            } else {
+                $records = array_merge($records, $current); 
+            }
+
+
+
+            $endpoint = $body["nextRecordsUrl"];
+        
+        } while($body["done"] === false);
+
+        $resp->setRecords($records);
+
+        return $resp;
+    }
+
+
 
 
 
 
     public function queryAll($soql, $page = true) {
 
-        $endpoint = "/services/data/v54.0/queryAll/?q=";
+        $endpoint = "queryAll/?q=";
         $endpoint .= urlencode($soql);
 
         $this->setMethod("GET");
 
-        $records = array();
+        // $endpoint = "/services/data/v58.0/query/?q=";
+        // $endpoint .= urlencode($soql);
 
+        $records = array();
+        $runcount = 0;
         do {
             // var_dump($this);exit;
             $resp = $this->send($endpoint);
-            
             $body = $resp->getBody();
+            
             $current = null == $resp->getRecords() ? array() : $resp->getRecords();
-            $records = array_merge($records, $current);
+            $runcount += count($resp->getRecords());
+
+            // If we are paging, determine if 
+            // Correct the size of the final records array
+            // to account for the intended batch size
+            if( null == $this->pageSize) {
+                $records = array_merge($records, $current);
+            } else if($runcount >= $this->pageSize) {
+                $body["done"] = true;
+                $diff = $runcount > $this->pageSize ? $runcount - $this->pageSize : null;
+                $records = array_merge($records, array_slice($current, 0, $diff));
+            }
 
             $endpoint = $body["nextRecordsUrl"];
         
@@ -341,40 +422,15 @@ class RestApiRequest extends HttpRequest {
 
 
 
-    public function loadAll($soql) {
 
-
-        $this->setMethod("GET");
-
-        $endpoint = "/services/data/v49.0/query/?q=";
-        $endpoint .= urlencode($soql);
-
-        $records = array();
-
-        do {
-
-            $resp = $this->send($endpoint);
-
-            $body = $resp->getBody();
-
-            $current = null == $resp->getRecords() ? array() : $resp->getRecords();
-            $records = array_merge($records, $current);
-
-            $endpoint = $body["nextRecordsUrl"];
-        
-        } while($body["done"] === false);
-
-        $resp->setRecords($records);
-
-        return $resp;
-    }
+    
 
 
 
     // Uses the salesforce "GlobalValueSet: endpoint, to return the GlobalValueSet with the given Id.
     public function getGlobalValueSetNames($valueSetId){
 
-        $url = "/services/data/v39.0/tooling/sobjects/GlobalValueSet/$valueSetId";
+        $url = "tooling/sobjects/GlobalValueSet/$valueSetId";
 
         $resp = $this->send($url);
 
@@ -394,7 +450,7 @@ class RestApiRequest extends HttpRequest {
 
     public function getGlobalValueSetIdByDeveloperName($developername){
 
-        $endpoint = "/services/data/v41.0/tooling/query?q=select+id+from+globalvalueset+Where+developername='$developername'";
+        $endpoint = "tooling/query?q=select+id+from+globalvalueset+Where+developername='$developername'";
 
         $resp = $this->send($endpoint);
 
@@ -406,7 +462,7 @@ class RestApiRequest extends HttpRequest {
     // Get the metadata for the contact object.
     public function getSobjectMetadata($sobjectName){
 
-        $sObjectMetaEndpoint = "/services/data/v23.0/sobjects/$sobjectName/describe";
+        $sObjectMetaEndpoint = "sobjects/$sobjectName/describe";
         $resp = $this->send($sObjectMetaEndpoint);
         return $resp->getBody();
     }
@@ -432,7 +488,7 @@ class RestApiRequest extends HttpRequest {
         $record = is_array($record) ? (object)$record : $record;
 
         // Set up the endpoint.
-        $baseUrl = "/services/data/v49.0/sobjects/" . $sobjectName;
+        $baseUrl = "sobjects/{$sobjectName}";
         $endpoint = $record->Id == null || $record->Id == "" ? $baseUrl : $baseUrl . "/" . $record->Id;
 
         //$record = self::formatJson($record);
@@ -452,9 +508,8 @@ class RestApiRequest extends HttpRequest {
 
 
     public function delete($sObject, $sObjectId){
-        $apiVersion = "v50.0";
 
-        $endpoint = "/services/data/{$apiVersion}/sobjects/{$sObject}/{$sObjectId}";
+        $endpoint = "sobjects/{$sObject}/{$sObjectId}";
 
         $this->setDelete();
         $resp = $this->send($endpoint);
@@ -482,28 +537,28 @@ class RestApiRequest extends HttpRequest {
 
     public function getAttachment($id) {
         
-        $endpoint = "/services/data/v49.0/sobjects/Attachment/{$id}/body";
+        $endpoint = "sobjects/Attachment/{$id}/body";
         $resp = $this->send($endpoint);
 
         return $resp;
     }
 
     public function getAttachments($parentId) {
-        $endpoint = "/services/data/v49.0/sobjects/Attachment/{$parentId}/body";
+        $endpoint = "sobjects/Attachment/{$parentId}/body";
         $resp = $this->send($endpoint);
 
         return $resp;
     }
 
     public function getDocument($id) {
-        $endpoint = "/services/data/v49.0/sobjects/Document/{$id}/body";
+        $endpoint = "sobjects/Document/{$id}/body";
         $resp = $this->send($endpoint);
 
         return $resp;
     }
     
     public function getDocuments($parentId) {
-        $endpoint = "/services/data/v49.0/sobjects/Attachment/{$parentId}/body";
+        $endpoint = "sobjects/Attachment/{$parentId}/body";
         $resp = $this->send($endpoint);
 
         return $resp;
@@ -511,7 +566,7 @@ class RestApiRequest extends HttpRequest {
 
     public function getContentDocument($id) {
            
-        $endpoint = "/services/data/v51.0/sobjects/ContentVersion/{$ContentVersionId}/VersionData";
+        $endpoint = "sobjects/ContentVersion/{$ContentVersionId}/VersionData";
         $resp = $this->send($endpoint);
 
         return $resp;
@@ -520,7 +575,7 @@ class RestApiRequest extends HttpRequest {
     public function getContentDocuments($parentId) {
 
            
-        $endpoint = "/services/data/v51.0/sobjects/ContentDocumentLink/{$ContentDocumentID}";
+        $endpoint = "sobjects/ContentDocumentLink/{$ContentDocumentID}";
         $resp = $this->send($endpoint);
 
         return $resp;
